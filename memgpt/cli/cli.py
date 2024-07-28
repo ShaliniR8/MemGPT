@@ -425,6 +425,7 @@ def run(
     # setup logger
     # TODO: remove Utils Debug after global logging is complete.
     utils.DEBUG = debug
+
     # TODO: add logging command line options for runtime log level
 
     if debug:
@@ -533,6 +534,8 @@ def run(
     agent_state = ms.get_agent(agent_name=agent, user_id=user.id) if agent else None
     human = human if human else config.human
     persona = persona if persona else config.persona
+    typer.secho(f"\n🧬 Model wrapper: {model_wrapper}", fg=typer.colors.WHITE)
+
     if agent and agent_state:  # use existing agent
         typer.secho(f"\n🔁 Using existing agent {agent}", fg=typer.colors.GREEN)
         # agent_config = AgentConfig.load(agent)
