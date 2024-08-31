@@ -12,7 +12,11 @@ import json
 
 BASE_URL = "http://localhost:8283"
 TOKEN = "yuki"
-AGENT_ID = uuid.UUID("443bc820-234f-499f-bafd-9e2fa95939d2")
+
+
+# TODO: Agent ID is different for different systems or instances of Yuki. Handle updating the Agent ID accordingly.
+# AGENT_ID = uuid.UUID(<agent_id>)
+
 
 class AgentClient:
     def __init__(self, base_url: str, token: str, agent_id: uuid.UUID):
