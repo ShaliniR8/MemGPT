@@ -6,6 +6,9 @@ import json
 # run `memgpt quickstart`
 # run `memgpt run --agent yuki` --- Ctrl + C out of the chat.
 
+# if storage backend is postgresql:
+# run `export PGVECTOR_TEST_DB_URL=postgresql+pg8000://<user>:<password>@localhost:5432/<dbname>
+
 # run the following commands in a separate terminal before running this script:
 # run `export MEMGPT_SERVER_PASS=yuki`
 # run `memgpt server` 
