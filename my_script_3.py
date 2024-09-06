@@ -3,7 +3,7 @@ import argparse
 import requests
 import json
 import random
-from agent_database import get_agent_id
+from agent_database import get_agent_id, transfer_memory
 
 # If starting fresh run these commands:
 # run `memgpt quickstart`
@@ -18,18 +18,19 @@ from agent_database import get_agent_id
 
 BASE_URL = "http://localhost:8283"
 TOKEN = "yuki"
-AGENT_ID = uuid.UUID(get_agent_id()) # for sqlite
+ID = get_agent_id()
 # AGENT_ID = uuid.UUID("25dd901c-3cc2-42ed-86ee-a3d80493b24f") # this is for postgresql.
 
 class AgentClient:
-    def __init__(self, base_url: str, token: str, agent_id: uuid.UUID):
+    def __init__(self, base_url: str, token: str, id: int):
         self.base_url = base_url
         self.headers = {
             "accept": "application/json",
             "authorization": f"Bearer {token}",
             "content-type": "application/json",
         }
-        self.agent_id = agent_id
+        self.id = id
+        self.agent_id = uuid.UUID(id)
 
     def send_message(self, message: str, role: str = "user", stream: bool = False):
         data = {
@@ -43,13 +44,13 @@ class AgentClient:
                 f"{self.base_url}/api/agents/{self.agent_id}/messages", 
                 headers=self.headers, 
                 json=data,
-                timeout= 10
+                timeout= 20
             )
             response.raise_for_status()
-            return response.json()
+            return (response.json(), None)
         except requests.exceptions.Timeout:
-
-            return {'messages': {'error_msg': "I'm sorry, this is taking some time... Thank you for your patience."}}
+            transfer_memory(self.id)
+            return ({'messages': {'error_msg': "I'm sorry, this is taking some time... Thank you for your patience."}}, get_agent_id())
         except requests.exceptions.RequestException as e:
             print(f"An error occurred: {e}")
     
@@ -65,7 +66,7 @@ class AgentClient:
                 print(f"ASSISTANT: {response['messages'][msg]}")
 
 def main():
-    client = AgentClient(BASE_URL, TOKEN, AGENT_ID)
+    client = AgentClient(BASE_URL, TOKEN, ID)
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -90,22 +91,26 @@ def main():
             if user_input.strip().upper() == "STOP":
                 print("Ending conversation.")
                 break
-            response = client.send_message(user_input)
+            (response, new_id) = client.send_message(user_input)
             client.format_response(response)
+            if new_id != None:
+                client = AgentClient(BASE_URL, TOKEN, new_id)
     elif args.function == 'system_chat':
         print(f"Number of passes: {args.passes}")
         count = 0
         context = "I will perform a batch of tests where I will write a number, and you will have to tell me the next prime number"
         print("SYSTEM: ", context)
-        response = client.send_message(context)
+        (response, _) = client.send_message(context)
         client.format_response(response)
 
         while count < args.passes:
             count += 1
             random_number = f"Number is {random.randint(1, 10000)}"
             print("SYSTEM: ", random_number)
-            response = client.send_message(random_number)
+            (response, new_id) = client.send_message(random_number)
             client.format_response(response)
+            if new_id != None:
+                client = AgentClient(BASE_URL, TOKEN, new_id)
         
         print('STOP')
 

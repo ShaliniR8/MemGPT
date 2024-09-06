@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 
 def get_agent_id():
     conn = sqlite3.connect('C:/Users/Shalini Roy/.memgpt/sqlite.db')
@@ -9,6 +10,10 @@ def get_agent_id():
     agent_id = cursor.fetchall()[0][0]
     print(agent_id)
     return agent_id
+
+def transfer_memory(old_id):
+    new_id = uuid.uuid4()
+    replace_ids(old_id, new_id)
 
 def replace_ids(old_id, new_id):
     conn = sqlite3.connect('C:/Users/Shalini Roy/.memgpt/sqlite.db')
@@ -23,11 +28,16 @@ def replace_ids(old_id, new_id):
     tables = cursor.fetchall()
     for table in tables:
         table_name = table[0]
-        update_query = f"UPDATE {table_name} SET agent_id = '001';"
+        update_query = f"UPDATE {table_name} SET agent_id = '{new_id}';"
         cursor.execute(update_query)
-        print(f"Updated {table_name} with agent_id = '001'")
 
+    update_query = f"UPDATE agents SET id = '{new_id}';"
+    cursor.execute(update_query)
+    
+    conn.commit()
     conn.close()
+
+
 
     conn = sqlite3.connect('C:/Users/Shalini Roy/.memgpt/chroma/chroma.sqlite3')
     cursor = conn.cursor()
@@ -38,8 +48,10 @@ def replace_ids(old_id, new_id):
     WHERE type='table' AND sql LIKE '%agent_id%';
     """)
 
-    results = cursor.fetchall()
-    for row in results:
-        print(f"Table: {row[0]}")
-
+    tables = cursor.fetchall()
+    for table in tables:
+        table_name = table[0]
+        update_query = f"UPDATE {table_name} SET agent_id = '{new_id}';"
+        cursor.execute(update_query)
+    conn.commit()
     conn.close()
